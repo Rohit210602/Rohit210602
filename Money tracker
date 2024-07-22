@@ -1,0 +1,187 @@
+mkdir money-tracker
+cd money-tracker
+npm init -y
+npm install express mongoose ejs body-parser
+mkdir views public public/css public/js routes models
+const express = require('express');
+const bodyParser = require('body-parser');
+const mongoose = require('mongoose');
+const app = express();
+
+// Middleware
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.static("public"));
+
+// Set EJS as the templating engine
+app.set('view engine', 'ejs');
+
+// Connect to MongoDB
+mongoose.connect('mongodb://localhost:27017/moneyTrackerDB', { useNewUrlParser: true, useUnifiedTopology: true });
+
+// Routes
+app.use(require('./routes/transactions'));
+
+// Start server
+app.listen(3000, function() {
+  console.log("Server started on port 3000");
+});
+const express = require('express');
+const router = express.Router();
+const Transaction = require('../models/transaction');
+
+// Home route
+router.get('/', async (req, res) => {
+  const transactions = await Transaction.find();
+  res.render('home', { transactions: transactions });
+});
+
+// Add transaction route
+router.get('/add', (req, res) => {
+  res.render('add');
+});
+
+router.post('/add', async (req, res) => {
+  const transaction = new Transaction({
+    type: req.body.type,
+    amount: req.body.amount,
+    description: req.body.description,
+    date: new Date(req.body.date)
+  });
+  await transaction.save();
+  res.redirect('/');
+});
+
+module.exports = router;
+const mongoose = require('mongoose');
+
+const transactionSchema = new mongoose.Schema({
+  type: {
+    type: String,
+    enum: ['Income', 'Expense'],
+    required: true
+  },
+  amount: {
+    type: Number,
+    required: true
+  },
+  description: String,
+  date: {
+    type: Date,
+    default: Date.now
+  }
+});
+
+module.exports = mongoose.model('Transaction', transactionSchema);
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Money Tracker</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <h1>Money Tracker</h1>
+  <a href="/add">Add Transaction</a>
+  <table>
+    <tr>
+      <th>Type</th>
+      <th>Amount</th>
+      <th>Description</th>
+      <th>Date</th>
+    </tr>
+    <% transactions.forEach(transaction => { %>
+      <tr>
+        <td><%= transaction.type %></td>
+        <td><%= transaction.amount %></td>
+        <td><%= transaction.description %></td>
+        <td><%= transaction.date.toDateString() %></td>
+      </tr>
+    <% }) %>
+  </table>
+</body>
+</html>
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Add Transaction</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <h1>Add Transaction</h1>
+  <form action="/add" method="POST">
+    <label for="type">Type:</label>
+    <select name="type" id="type" required>
+      <option value="Income">Income</option>
+      <option value="Expense">Expense</option>
+    </select>
+    <label for="amount">Amount:</label>
+    <input type="number" name="amount" id="amount" required>
+    <label for="description">Description:</label>
+    <input type="text" name="description" id="description">
+    <label for="date">Date:</label>
+    <input type="date" name="date" id="date" required>
+    <button type="submit">Add</button>
+  </form>
+  <a href="/">Back</a>
+</body>
+</html>
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background: #f4f4f4;
+}
+
+h1 {
+  text-align: center;
+  margin-top: 20px;
+}
+
+table {
+  width: 80%;
+  margin: 20px auto;
+  border-collapse: collapse;
+}
+
+table, th, td {
+  border: 1px solid #ddd;
+}
+
+th, td {
+  padding: 10px;
+  text-align: left;
+}
+
+th {
+  background-color: #f2f2f2;
+}
+
+form {
+  max-width: 600px;
+  margin: 20px auto;
+  padding: 20px;
+  background: #fff;
+  border-radius: 5px;
+}
+
+form label {
+  display: block;
+  margin: 10px 0 5px;
+}
+
+form input, form select {
+  width: 100%;
+  padding: 10px;
+  margin: 5px 0 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+form button {
+  padding: 10px 20px;
+  background: #3498db;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+node server.js
