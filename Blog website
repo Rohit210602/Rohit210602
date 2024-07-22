@@ -1,0 +1,164 @@
+mkdir blog-website
+cd blog-website
+npm init -y
+npm install express mongoose ejs body-parser
+mkdir views public public/css public/js routes models
+const express = require('express');
+const bodyParser = require('body-parser');
+const mongoose = require('mongoose');
+const app = express();
+
+// Middleware
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.static("public"));
+
+// Set EJS as the templating engine
+app.set('view engine', 'ejs');
+
+// Connect to MongoDB
+mongoose.connect('mongodb://localhost:27017/blogDB', { useNewUrlParser: true, useUnifiedTopology: true });
+
+// Routes
+app.use(require('./routes/blog'));
+
+// Start server
+app.listen(3000, function() {
+  console.log("Server started on port 3000");
+});
+const express = require('express');
+const router = express.Router();
+const Post = require('../models/post');
+
+// Home route
+router.get('/', async (req, res) => {
+  const posts = await Post.find();
+  res.render('home', { posts: posts });
+});
+
+// Compose route
+router.get('/compose', (req, res) => {
+  res.render('compose');
+});
+
+router.post('/compose', async (req, res) => {
+  const post = new Post({
+    title: req.body.postTitle,
+    content: req.body.postContent
+  });
+  await post.save();
+  res.redirect('/');
+});
+
+// Individual post route
+router.get('/posts/:postId', async (req, res) => {
+  const post = await Post.findById(req.params.postId);
+  res.render('post', { title: post.title, content: post.content });
+});
+
+module.exports = router;
+const mongoose = require('mongoose');
+
+const postSchema = new mongoose.Schema({
+  title: String,
+  content: String
+});
+
+module.exports = mongoose.model('Post', postSchema);
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Blog</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <h1>Blog Posts</h1>
+  <a href="/compose">Compose</a>
+  <% posts.forEach(post => { %>
+    <div class="post">
+      <h2><%= post.title %></h2>
+      <p><%= post.content.substring(0, 100) %>...</p>
+      <a href="/posts/<%= post._id %>">Read More</a>
+    </div>
+  <% }) %>
+</body>
+</html>
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Compose</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <h1>Compose a Post</h1>
+  <form action="/compose" method="POST">
+    <input type="text" name="postTitle" placeholder="Title" required>
+    <textarea name="postContent" placeholder="Content" rows="10" required></textarea>
+    <button type="submit">Publish</button>
+  </form>
+</body>
+</html>
+<!DOCTYPE html>
+<html>
+<head>
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <h1><%= title %></h1>
+  <p><%= content %></p>
+  <a href="/">Back</a>
+</body>
+</html>
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background: #f4f4f4;
+}
+
+h1 {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.post {
+  background: #fff;
+  margin: 20px;
+  padding: 20px;
+  border-radius: 5px;
+}
+
+.post h2 {
+  margin: 0;
+}
+
+.post a {
+  color: #3498db;
+  text-decoration: none;
+}
+
+form {
+  max-width: 600px;
+  margin: 20px auto;
+  padding: 20px;
+  background: #fff;
+  border-radius: 5px;
+}
+
+form input, form textarea {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+form button {
+  padding: 10px 20px;
+  background: #3498db;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+node server.js
